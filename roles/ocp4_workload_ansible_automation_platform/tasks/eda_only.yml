@@ -1,0 +1,34 @@
+- name: Deploy Ansible Automation Platform 2 (AAP2) EDA Controller
+  environment:
+    KUBECONFIG: "{{ ocp4_workload_ansible_automation_platform_tmp_kubeconfig }}"
+  block:
+  
+    - name: Create Automation EDA Controller
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'edacontroller.j2') }}"
+      
+    - name: Retrieve created route
+      kubernetes.core.k8s_info:
+        api_version: "route.openshift.io/v1"
+        kind: Route
+        name: "{{ ocp4_workload_ansible_automation_eda_app_name }}"
+        namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+      register: eda_route
+      until: eda_route.resources[0].spec.host is defined
+      retries: 30
+      delay: 45
+        
+    - name: Get automation_controller route hostname
+      ansible.builtin.set_fact:
+        eda_controller_hostname: "{{ eda_route.resources[0].spec.host }}"
+    
+    - name: Wait for automation_controller to be running
+      ansible.builtin.uri:
+        url: http://{{ eda_controller_hostname }}/api/v2/ping/
+        status_code: 200
+      register: eda_result
+      until: eda_result.json.version is defined
+      retries: 60
+      delay: 45
+  when: deploy_eda_controller

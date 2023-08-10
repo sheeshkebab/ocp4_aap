@@ -1,0 +1,55 @@
+---
+
+- name: Setup environment vars
+  environment:
+    KUBECONFIG: "{{ ocp4_workload_ansible_automation_platform_tmp_kubeconfig }}"
+  block:
+
+    - name: Wait until the Automation Controller Manager operator is running
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Deployment
+        name: automation-controller-operator-controller-manager
+        namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+      register: r_aap_controller_manager_operator
+      ignore_errors: true
+      until:
+        - r_aap_controller_manager_operator.resources[0].status.readyReplicas is defined
+        - "r_aap_controller_manager_operator.resources[0].status.replicas == \
+            r_aap_controller_manager_operator.resources[0].status.readyReplicas"
+      retries: 30
+      delay: 10
+
+    - name: Print kube info
+      debug:
+        #msg: "{{ r_aap_controller_manager_operator.resources[0].status.readyReplicas }}" 
+        msg: "{{ r_aap_controller_manager_operator.resources[0].status.readyReplicas }} -
+                {{ r_aap_controller_manager_operator.resources[0].status.replicas }}" 
+
+    - name: Wait until the Automation Hub Manager operator is running
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Deployment
+        name: automation-hub-operator-controller-manager
+        namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+      register: r_aap_hub_manager_operator
+      until:
+        - r_aap_hub_manager_operator.resources[0].status.readyReplicas is defined
+        - "r_aap_hub_manager_operator.resources[0].status.replicas == \
+            r_aap_hub_manager_operator.resources[0].status.readyReplicas"
+      retries: 30
+      delay: 10
+
+    - name: Wait until the Automation Resource Manager operator is running
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Deployment
+        name: resource-operator-controller-manager
+        namespace: "{{ ocp4_workload_ansible_automation_platform_project }}"
+      register: r_aap_resource_manager_operator
+      until:
+        - r_aap_resource_manager_operator.resources[0].status.readyReplicas is defined
+        - "r_aap_resource_manager_operator.resources[0].status.replicas == \
+            r_aap_resource_manager_operator.resources[0].status.readyReplicas"
+      retries: 30
+      delay: 10

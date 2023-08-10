@@ -1,0 +1,13 @@
+---
+
+- name: Test ocp4_workload_ansible_automation_platform role
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ACTION: create
+    ocp4_workload_ansible_automation_platform_admin_password: 1800RedHat 
+
+  roles:
+    - ocp4_workload_ansible_automation_platform
